@@ -114,3 +114,7 @@ def authRefresh():
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity)
     return jsonify(access_token=access_token), 200
+
+
+if __name__ == '__main__':
+    app.run()
