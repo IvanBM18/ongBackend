@@ -9,6 +9,7 @@ from flask_jwt_extended import (JWTManager, create_access_token,
                                 jwt_required)
 from flask_mysqldb import MySQL
 
+from src.constants import PAGE_SIZE
 from src.models.patient import Patient
 from src.models.user import User
 
@@ -41,7 +42,7 @@ mysql = MySQL(app)
 @cross_origin(origin="*", headers=['Content-Type', 'Authorization'])
 def getPatients():
     limitFrom = int(request.args.get('from', 0))
-    limitTo = int(request.args.get('to', 1))
+    limitTo = int(request.args.get('to', PAGE_SIZE))
     print(request.args.get('from'))
     # Patients
     cursor = mysql.connection.cursor()
