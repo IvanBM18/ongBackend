@@ -1,1 +1,1 @@
-FLASK_APP=src/app.py FLASK_ENV=development flask run
+set FLASK_APP=src/app.py && set FLASK_ENV=development && flask run

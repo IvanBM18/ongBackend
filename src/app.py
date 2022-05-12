@@ -33,19 +33,19 @@ app.config['MYSQL_PASSWORD'] =os.getenv('MYSQL_PASSWORD')
 app.config['MYSQL_DB'] = os.getenv('MYSQL_DB')
 app.config["MYSQL_CUSTOM_OPTIONS"] = {
   "ssl": {"ca": "certificado.pem"},
-  "ssl_mode": "VERIFY_IDENTITY"
+  # "ssl_mode": "VERIFY_IDENTITY"
 }
 mysql = MySQL(app)
 
 @app.route('/patients', methods=["GET"])
-@jwt_required()
-@cross_origin(origin="*", headers=['Content-Type', 'Authorization'])
+@cross_origin(origin="*")
 def getPatients():
     limitFrom = int(request.args.get('from', 0))
     limitTo = int(request.args.get('to', PAGE_SIZE))
-    print(request.args.get('from'))
-    # Patients
+
     cursor = mysql.connection.cursor()
+    cursor.execute("SHOW SESSION VARIABLES LIKE 'character\_set\_%'")
+    print(cursor.fetchall())
     cursor.execute('''
       SELECT JSON_OBJECT(
         'id', id, 
@@ -54,7 +54,7 @@ def getPatients():
         'phone_number', phone_number, 
         'gender', gender, 
         'observations', observations,
-        'program', program
+        'program', program  
       ) FROM patient
         LIMIT %d,%d
       '''% (limitFrom, limitTo)
