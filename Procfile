@@ -1,1 +1,1 @@
-worker: flask run
+worker: python src/app.py

@@ -9,9 +9,9 @@ from flask_jwt_extended import (JWTManager, create_access_token,
                                 jwt_required)
 from flask_mysqldb import MySQL
 
-from src.constants import PAGE_SIZE
-from src.models.patient import Patient
-from src.models.user import User
+from constants import PAGE_SIZE
+from models.patient import Patient
+from models.user import User
 
 load_dotenv()
 
@@ -32,8 +32,8 @@ app.config['MYSQL_USER'] = os.getenv('MYSQL_USER')
 app.config['MYSQL_PASSWORD'] =os.getenv('MYSQL_PASSWORD')
 app.config['MYSQL_DB'] = os.getenv('MYSQL_DB')
 app.config["MYSQL_CUSTOM_OPTIONS"] = {
-  "ssl": {"ca": "certificado.pem"},
-  # "ssl_mode": "VERIFY_IDENTITY"
+  "ssl": {"ca": "/etc/ssl/cert.pem"},
+  "ssl_mode": "VERIFY_IDENTITY"
 }
 mysql = MySQL(app)
 
@@ -116,3 +116,5 @@ def authRefresh():
     access_token = create_access_token(identity=identity)
     return jsonify(access_token=access_token), 200
 
+if __name__ == '__main__':
+    app.run()
