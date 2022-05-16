@@ -1,3 +1,4 @@
+import imp
 import json
 import os
 
@@ -9,9 +10,8 @@ from flask_jwt_extended import (JWTManager, create_access_token,
                                 jwt_required)
 from flask_mysqldb import MySQL
 
-from constants import PAGE_SIZE
-from models.patient import Patient
-from models.user import User
+from app.constants import PAGE_SIZE
+from app.models.user import User
 
 load_dotenv()
 
@@ -115,6 +115,3 @@ def authRefresh():
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity)
     return jsonify(access_token=access_token), 200
-
-if __name__ == '__main__':
-    app.run()
