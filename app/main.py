@@ -90,20 +90,20 @@ def authLogin():
 
     cursor = mysql.connection.cursor()
     # cursor.execute('''SELECT id FROM user WHERE email = 'diegomzepeda11@gmail.com' AND password = '123455678';''')
-    cursor.execute("SELECT JSON_OBJECT('id', id) FROM user WHERE email = %(email)s AND password = %(password)s LIMIT 1", request.json)
+    cursor.execute("SELECT JSON_OBJECT('id', id, 'name', name, 'email', email, 'role_id', role_id, 'image', image) FROM user WHERE email = %(email)s AND password = %(password)s LIMIT 1", request.json)
     queryResult = cursor.fetchone()
 
     if queryResult == None: 
           # el usuario no se encontró en la base de datos
         return jsonify({"msg": "Credenciales invalidas, verifique los datos introducidos."}), 401
     
-    jsonResult = json.loads(queryResult[0])
-    user = User.from_json(jsonResult)
+    userJson = json.loads(queryResult[0])
+    user = User.from_json(userJson)
     
     # crea un nuevo token con el id de usuario dentro
     access_token = create_access_token(identity=user.id)
     refresh_token = create_refresh_token(identity=user.id)
-    return jsonify(access_token=access_token, refresh_token=refresh_token, user_id=user.id), 200
+    return jsonify(access_token=access_token, refresh_token=refresh_token, user=userJson), 200
 
 
 
