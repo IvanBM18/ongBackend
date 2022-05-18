@@ -2,7 +2,7 @@ from typing import Dict
 
 
 class Patient:
-  def __init__(self, id:int = None, name:str = None, age:int = None, phoneNumber:int=None, gender:str=None, observations:str=None, program:str=None):
+  def __init__(self, id:int = None, name:str = None, age:int = None, phoneNumber:str=None, gender:str='N', observations:str=None, program:str=None):
     self.id = id
     self.name = name
     self.age = age
