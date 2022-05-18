@@ -11,6 +11,7 @@ from flask_jwt_extended import (JWTManager, create_access_token,
 from flask_mysqldb import MySQL
 
 from app.constants import PAGE_SIZE
+from app.models.patient import Patient
 from app.models.user import User
 
 load_dotenv()
@@ -37,6 +38,8 @@ app.config["MYSQL_CUSTOM_OPTIONS"] = {
 }
 mysql = MySQL(app)
 
+
+""" --------------------- PATIENTS ENDPOINTS --------------------- """
 @app.route('/patients', methods=["GET"])
 @cross_origin(origin="*")
 def getPatients():
@@ -82,6 +85,76 @@ def getPatients():
 
     return jsonify(res), 200
 
+@app.route('/patients/<int:id>', methods=["PUT"])
+@cross_origin(origin="*")
+def updatePatient(id):
+  data = request.get_json()
+  p = Patient.from_json(data)
+
+  cursor = mysql.connection.cursor()
+  query = '''
+    UPDATE patient
+    SET name = COALESCE(%s, name),
+     age = COALESCE(%s, age),
+     phone_number = COALESCE(%s, phone_number),
+     program = COALESCE(%s, program),
+     observations = COALESCE(%s, observations)
+    WHERE id = %d
+  ''' % (
+    f"'{p.name}'" if p.name is not None else 'NULL',
+    f"{p.age}" if p.age is not None else 'NULL',
+    f"'{p.phoneNumber}'" if p.phoneNumber is not None else 'NULL',
+    f"'{p.program}'" if p.program is not None else 'NULL',
+    f"'{p.observations}'" if p.observations is not None else 'NULL',
+    int(id)
+  )
+  
+  cursor.execute(query)
+  cursor.close()
+
+  return jsonify({'message': 'ok'}), 200
+
+@app.route('/patients/<int:id>', methods=["DELETE"])
+@cross_origin(origin="*")
+def deletePatient(id):
+  cursor = mysql.connection.cursor()
+  query = '''
+    DELETE FROM patient
+    WHERE id = %d
+  ''' % (int(id))
+  cursor.execute(query)
+  cursor.close()
+
+  return jsonify({'message': 'ok'}), 200
+
+@app.route('/patients', methods=["POST"])
+@cross_origin(origin="*")
+def createPatient():
+  data = request.get_json()
+  p = Patient.from_json(data)
+
+  cursor = mysql.connection.cursor()
+  query = '''
+    INSERT INTO patient (name, age, phone_number, program, observations, gender)
+    VALUES (%s, %s, %s, %s, %s, %s)
+  ''' % (
+    f"'{p.name}'" if p.name is not None else 'NULL',
+    f"{p.age}" if p.age is not None else 'NULL',
+    f"'{p.phoneNumber}'" if p.phoneNumber is not None else 'NULL',
+    f"'{p.program}'" if p.program is not None else 'NULL',
+    f"'{p.observations}'" if p.observations is not None else 'NULL',
+    f"'{p.gender}'" if p.gender is not None else "'N'"
+    
+  )
+  print(query)
+  cursor.execute(query)
+  mysql.connection.commit()
+  cursor.close()
+
+  return jsonify({'message': 'ok'}), 200
+
+'''- - - - - - - - - AUTH ENDPOINTS - - - - - - - - - '''
+
 @app.route('/auth/login', methods=['POST'])
 @cross_origin()
 def authLogin():
@@ -114,3 +187,4 @@ def authRefresh():
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity)
     return jsonify(access_token=access_token), 200
+
