@@ -12,6 +12,7 @@ from flask_mysqldb import MySQL
 
 from app.constants import PAGE_SIZE
 from app.models.patient import Patient
+from app.models.medicine import Medicine
 from app.models.user import User
 
 load_dotenv()
@@ -53,7 +54,7 @@ def getPatients():
         'id', id, 
         'name', name, 
         'age', age, 
-        'phone_number', phone_number, 
+        'stock', stock, 
         'gender', gender, 
         'observations', observations,
         'program', program  
@@ -155,6 +156,54 @@ def createPatient():
   cursor.close()
 
   return jsonify({'message': 'ok'}), 200
+
+'''- - - - - - - - - MEDICINE ENDPOINTS - - - - - - - - - '''
+@app.route('/medicines', methods=["GET"])
+@cross_origin(origin="*")
+def getPatients():
+    limitFrom = int(request.args.get('from', 0))
+    limitTo = int(request.args.get('to', PAGE_SIZE))
+
+    cursor = mysql.connection.cursor()
+
+    cursor.execute('''
+      SELECT JSON_OBJECT(
+        'id', id, 
+        'concept', concept, 
+        'creation_date', creation_date, 
+        'stock', stock, 
+        'price', price, 
+        'type', type,
+        'location', location  
+        'user_id', user_id  
+        'expiration_date', expiration_date  
+      ) FROM medicine
+        LIMIT %d,%d
+      '''% (limitFrom, limitTo)
+      )
+    queryResult = cursor.fetchall()
+    medicines = []
+    for row in queryResult:
+      medicine = json.loads(row[0])
+      medicines.append(medicine)
+
+    # Props
+    cursor.execute('''SELECT count(*) FROM medicine''')
+    queryResult = cursor.fetchone()
+    total = queryResult[0]
+
+    cursor.close()
+
+    res = {
+      'medicines': medicines,
+      'total': total,
+      'paging': {
+        'from': limitFrom,
+        'to': limitTo
+      }
+    }
+
+    return jsonify(res), 200
 
 '''- - - - - - - - - AUTH ENDPOINTS - - - - - - - - - '''
 
