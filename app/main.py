@@ -98,7 +98,8 @@ def updatePatient(id):
      age = COALESCE(%s, age),
      phone_number = COALESCE(%s, phone_number),
      program = COALESCE(%s, program),
-     observations = COALESCE(%s, observations)
+     observations = COALESCE(%s, observations),
+     gender = %s
     WHERE id = %d
   ''' % (
     f"'{p.name}'" if p.name is not None else 'NULL',
@@ -106,10 +107,12 @@ def updatePatient(id):
     f"'{p.phoneNumber}'" if p.phoneNumber is not None else 'NULL',
     f"'{p.program}'" if p.program is not None else 'NULL',
     f"'{p.observations}'" if p.observations is not None else 'NULL',
+    f"'{p.gender}'" if p.gender is not None else 'U',
     int(id)
   )
-  
+
   cursor.execute(query)
+  mysql.connection.commit()
   cursor.close()
 
   return jsonify({'message': 'ok'}), 200
@@ -123,6 +126,7 @@ def deletePatient(id):
     WHERE id = %d
   ''' % (int(id))
   cursor.execute(query)
+  mysql.connection.commit()
   cursor.close()
 
   return jsonify({'message': 'ok'}), 200
@@ -143,10 +147,9 @@ def createPatient():
     f"'{p.phoneNumber}'" if p.phoneNumber is not None else 'NULL',
     f"'{p.program}'" if p.program is not None else 'NULL',
     f"'{p.observations}'" if p.observations is not None else 'NULL',
-    f"'{p.gender}'" if p.gender is not None else "'N'"
-    
+    f"'{p.gender}'" if p.gender is not None else "'N'" 
   )
-  print(query)
+
   cursor.execute(query)
   mysql.connection.commit()
   cursor.close()

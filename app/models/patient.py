@@ -2,7 +2,7 @@ from typing import Dict
 
 
 class Patient:
-  def __init__(self, id:int = None, name:str = None, age:int = None, phoneNumber:str=None, gender:str='N', observations:str=None, program:str=None):
+  def __init__(self, id:int = None, name:str = None, age:int = None, phoneNumber:str=None, gender:str='U', observations:str=None, program:str=None):
     self.id = id
     self.name = name
     self.age = age
@@ -19,5 +19,6 @@ class Patient:
       age= json.get('age'),
       phoneNumber= json.get('phone_number'),
       observations= json.get('observations'),
+      gender= json.get('gender'),
       program= json.get('program'),
     )
