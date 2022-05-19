@@ -247,7 +247,7 @@ def updateMedicine(id):
      price = COALESCE(%s, price),
      type = COALESCE(%s, type),
      location = COALESCE(%s, location),
-     expiration_date = COALESCE(%s, expiration_date),
+     expiration_date = COALESCE(%s, expiration_date)
     WHERE id = %d
   ''' % (
     f"'{m.concept}'" if m.concept is not None else 'NULL',
