@@ -160,7 +160,7 @@ def createPatient():
 '''- - - - - - - - - MEDICINE ENDPOINTS - - - - - - - - - '''
 @app.route('/medicines', methods=["GET"])
 @cross_origin(origin="*")
-def getPatients():
+def getMedicines():
     limitFrom = int(request.args.get('from', 0))
     limitTo = int(request.args.get('to', PAGE_SIZE))
 
