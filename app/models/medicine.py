@@ -3,7 +3,7 @@ from typing import Dict
 
 
 class Medicine:
-  def __init__(self, id:int = None, concept:str = None, creation_date:date = None, stock:int=None, price:float=None, typeM:str=None, user_id:int=None, expiration_date:date=None, location:str=None):
+  def __init__(self, id:int = None, concept:str = None, creation_date:str = None, stock:int=None, price:float=None, typeM:str=None, user_id:int=None, expiration_date:str=None, location:str=None):
     self.id = id
     self.concept = concept
     self.creation_date = creation_date
