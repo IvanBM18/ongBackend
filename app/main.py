@@ -213,7 +213,7 @@ def createMedicine():
 
   cursor = mysql.connection.cursor()
   query = '''
-    INSERT INTO medicine (concept, stock, price, type, location, user_id, expiration_date)
+    INSERT INTO medicine (concept, stock, price, type, location, user_id)
     VALUES (%s, %s, %s, %s, %s, %s, %s)
   ''' % (
     f"'{p.concept}'" if p.concept is not None else 'NULL',
@@ -221,8 +221,7 @@ def createMedicine():
     f"'{p.price}'" if p.price is not None else 'NULL',
     f"'{p.typeM}'" if p.typeM is not None else 'NULL',
     f"'{p.location}'" if p.location is not None else 'NULL' ,
-    f"'{p.user_id}'" if p.user_id is not None else '-1' ,
-    f"{p.expiration_date}" if p.expiration_date is not None else 'NULL'
+    f"'{p.user_id}'" if p.user_id is not None else '0' ,
   )
 
   cursor.execute(query)
