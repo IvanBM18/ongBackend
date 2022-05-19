@@ -261,6 +261,8 @@ def updateMedicine(id):
   cursor.execute(query)
   mysql.connection.commit()
   cursor.close()
+  
+  return jsonify({'message': 'ok'}), 200
 
 '''- - - - - - - - - AUTH ENDPOINTS - - - - - - - - - '''
 @app.route('/auth/login', methods=['POST'])
