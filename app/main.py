@@ -54,7 +54,7 @@ def getPatients():
         'id', id, 
         'name', name, 
         'age', age, 
-        'stock', stock, 
+        'phone_number', phone_number, 
         'gender', gender, 
         'observations', observations,
         'program', program  
