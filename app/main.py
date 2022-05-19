@@ -264,6 +264,22 @@ def updateMedicine(id):
   
   return jsonify({'message': 'ok'}), 200
 
+@app.route('/medicines/<int:id>', methods=["DELETE"])
+@cross_origin(origin="*")
+def deleteMedicine(id):
+  cursor = mysql.connection.cursor()
+  query = '''
+    DELETE FROM medicine 
+    WHERE id = %d
+  ''' % (int(id))
+  cursor.execute(query)
+  mysql.connection.commit()
+  cursor.close()
+
+  return jsonify({'message': 'ok'}), 200
+
+
+
 '''- - - - - - - - - AUTH ENDPOINTS - - - - - - - - - '''
 @app.route('/auth/login', methods=['POST'])
 @cross_origin()
