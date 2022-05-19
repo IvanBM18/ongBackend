@@ -367,7 +367,7 @@ def updateDelivery(id):
 def deleteDelivery(id):
   cursor = mysql.connection.cursor()
   query = '''
-    DELETE FROM medicine 
+    DELETE FROM delivery 
     WHERE id = %d
   ''' % (int(id))
   cursor.execute(query)
