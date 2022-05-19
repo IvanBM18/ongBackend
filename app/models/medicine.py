@@ -26,3 +26,4 @@ class Medicine:
       user_id= json.get('user_id'),
       expiration_date= json.get('expiration_date'),
     )
+

@@ -210,7 +210,6 @@ def getMedicines():
 def createMedicine():
   data = request.get_json()
   p = Medicine.from_json(data)
-  return(p)
 
   cursor = mysql.connection.cursor()
   query = '''
@@ -220,7 +219,7 @@ def createMedicine():
     f"'{p.concept}'" if p.concept is not None else 'NULL',
     f"'{p.stock}'" if p.stock is not None else 'NULL',
     f"'{p.price}'" if p.price is not None else 'NULL',
-    f"'{p.type}'" if p.type is not None else 'NULL',
+    f"'{p.typeM}'" if p.typeM is not None else 'NULL',
     f"'{p.location}'" if p.location is not None else 'NULL' ,
     f"'{p.user_id}'" if p.user_id is not None else '-1' ,
     f"{p.expiration_date}" if p.expiration_date is not None else 'NULL'
