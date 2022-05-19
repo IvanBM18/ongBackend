@@ -1,8 +1,9 @@
 from datetime import date
 from typing import Dict
 
+
 class Delivery:
-  def __init__(self, id:int = None, description:str = None, delivery_date:str = None, stock:int=None, price:float=None, medicine_id:str=None, user_id:int=None, patient_id:str=None):
+  def __init__(self, id:int = None, description:str = None, delivery_date:str = None, stock:int=None, price:float=None, medicine_id:str=None, user_id:int=None, patient_id:str=None, expiration_date:str=None):
     self.id = id
     self.description = description
     self.delivery_date = delivery_date
@@ -11,6 +12,7 @@ class Delivery:
     self.user_id = user_id
     self.medicine_id = medicine_id
     self.patient_id = patient_id
+    self.expiration_date = expiration_date
   @classmethod
   def from_json(cls, json:Dict[str, any]):
     return cls(
@@ -22,4 +24,5 @@ class Delivery:
       user_id= json.get('user_id'),
       medicine_id = json.get('medicine_id'),
       patient_id = json.get('patient_id'),
+      expiration_date = json.get('expiration_date'),
     )
