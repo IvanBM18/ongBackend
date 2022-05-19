@@ -205,8 +205,35 @@ def getMedicines():
 
     return jsonify(res), 200
 
-'''- - - - - - - - - AUTH ENDPOINTS - - - - - - - - - '''
+@app.route('/medicines', methods=["POST"])
+@cross_origin(origin="*")
+def createMedicine():
+  data = request.get_json()
+  p = Medicine.from_json(data)
 
+  cursor = mysql.connection.cursor()
+  query = '''
+    INSERT INTO medicine (concept, creation_date, stock, price, type, location, user_id, expiration_date)
+    VALUES (%s, %s, %s, %s, %s, %s)
+  ''' % (
+    f"'{p.concept}'" if p.concept is not None else 'NULL',
+    f"{p.creation_date}" if p.creation_date is not None else 'NULL',
+    f"'{p.stock}'" if p.stock is not None else 'NULL',
+    f"'{p.price}'" if p.price is not None else 'NULL',
+    f"'{p.type}'" if p.type is not None else 'NULL',
+    f"'{p.location}'" if p.location is not None else "'N'" ,
+    f"'{p.user_id}'" if p.user_id is not None else 'NULL' ,
+    f"{p.expiration_date}" if p.expiration_date is not None else 'NULL'
+  )
+
+  cursor.execute(query)
+  mysql.connection.commit()
+  cursor.close()
+
+  return jsonify({'message': 'ok'}), 200
+
+
+'''- - - - - - - - - AUTH ENDPOINTS - - - - - - - - - '''
 @app.route('/auth/login', methods=['POST'])
 @cross_origin()
 def authLogin():
