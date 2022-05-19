@@ -174,8 +174,8 @@ def getMedicines():
         'stock', stock, 
         'price', price, 
         'type', type,
-        'location', location  
-        'user_id', user_id  
+        'location', location,  
+        'user_id', user_id,  
         'expiration_date', expiration_date  
       ) FROM medicine
         LIMIT %d,%d
