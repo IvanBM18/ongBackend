@@ -157,6 +157,8 @@ def createPatient():
 
   return jsonify({'message': 'ok'}), 200
 
+
+
 '''- - - - - - - - - MEDICINE ENDPOINTS - - - - - - - - - '''
 @app.route('/medicines', methods=["GET"])
 @cross_origin(origin="*")
@@ -231,6 +233,34 @@ def createMedicine():
 
   return jsonify({'message': 'ok'}), 200
 
+@app.route('/medicines/<int:id>', methods=["PUT"])
+@cross_origin(origin="*")
+def updateMedicine(id):
+  data = request.get_json()
+  m = Medicine.from_json(data)
+
+  cursor = mysql.connection.cursor()
+  query = '''
+    UPDATE medicine
+    SET concept = COALESCE(%s, concept),
+     stock = COALESCE(%s, stock),
+     price = COALESCE(%s, price),
+     type = COALESCE(%s, type),
+     location = COALESCE(%s, location),
+     expiration_date = COALESCE(%s, expiration_date),
+    WHERE id = %d
+  ''' % (
+    f"'{m.concept}'" if m.concept is not None else 'NULL',
+    f"{m.stock}" if m.stock is not None else 'NULL',
+    f"'{m.price}'" if m.price is not None else 'NULL',
+    f"'{m.typeM}'" if m.typeM is not None else 'NULL',
+    f"'{m.location}'" if m.location is not None else 'NULL',
+    f"'{m.expiration_date}'" if m.expiration_date is not None else 'NULL',
+    int(id)
+  )
+  cursor.execute(query)
+  mysql.connection.commit()
+  cursor.close()
 
 '''- - - - - - - - - AUTH ENDPOINTS - - - - - - - - - '''
 @app.route('/auth/login', methods=['POST'])
