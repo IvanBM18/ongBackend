@@ -210,6 +210,7 @@ def getMedicines():
 def createMedicine():
   data = request.get_json()
   p = Medicine.from_json(data)
+  print(p)
 
   cursor = mysql.connection.cursor()
   query = '''
