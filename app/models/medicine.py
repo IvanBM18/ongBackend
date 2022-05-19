@@ -23,6 +23,7 @@ class Medicine:
       stock= json.get('stock'),
       price= json.get('price'),
       typeM= json.get('type'),
+      location= json.get('location'),
       user_id= json.get('user_id'),
       expiration_date= json.get('expiration_date'),
     )
