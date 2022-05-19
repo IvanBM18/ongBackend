@@ -14,6 +14,7 @@ from app.constants import PAGE_SIZE
 from app.models.patient import Patient
 from app.models.medicine import Medicine
 from app.models.user import User
+from app.models.delivery import Delivery
 
 load_dotenv()
 
@@ -278,6 +279,102 @@ def deleteMedicine(id):
 
   return jsonify({'message': 'ok'}), 200
 
+
+'''- - - - - - - - - Delivery ENDPOINTS - - - - - - - - - '''
+@app.route('/delivery/<int:id>', methods=["GET"])
+@cross_origin(origin="*")
+def getDelivery():
+    limitFrom = int(request.args.get('from', 0))
+    limitTo = int(request.args.get('to', PAGE_SIZE))
+
+    cursor = mysql.connection.cursor()
+
+    cursor.execute('''
+      SELECT JSON_OBJECT(
+        'id', id, 
+        'description', description, 
+        'delivery_date', delivery_date, 
+        'stock', stock, 
+        'price', price, 
+        'user_id', user_id,
+        'medicine_id', medicine_id,
+        'patient_id', patient_id,  
+      ) FROM delivery
+        LIMIT %d,%d
+      '''% (limitFrom, limitTo)
+      )
+    queryResult = cursor.fetchall()
+    deliveries = []
+    for row in queryResult:
+      delivery = json.loads(row[0])
+      deliveries.appen(delivery)
+
+    # Props
+    cursor.execute('''SELECT count(*) FROM delivery''')
+    queryResult = cursor.fetchone()
+    total = queryResult[0]
+
+    cursor.close()
+
+    res = {
+      'deliveries': deliveries,
+      'total': total,
+      'paging': {
+        'from': limitFrom,
+        'to': limitTo
+      }
+    }
+
+    return jsonify(res), 200
+
+@app.route('/delivery/<int:id>', methods=["PUT"])
+@cross_origin(origins="*")
+def updateDelivery(id):
+  data = request.get_json()
+  d = Delivery.from_json(data)
+
+  cursor = mysql.connection.cursor()
+  query = '''
+    UPDATE delivery
+    SET description = COALESCE(%s, description),
+      stock = COALESCE(%s, stock),
+      delivery_date = COALESCE(%s, delivery_date),
+      price = COALESCE(%s, price),
+      user_id = COALESCE(%s, user_id),
+      medicine_id = COALESCE(%s, medicine_id),
+      patient_id = COALESCE(%s, patient_id)
+    WHERE id = %d
+  ''' % (
+    f"'{d.description}'" if d.description is not None else 'NULL',
+    f"'{d.stock}'" if d.stock is not None else 'NULL',
+    f"'{d.delivery_date}'" if d.delivery_date is not None else 'NULL',
+    f"'{d.price}'" if d.price is not None else 'NULL',
+    f"'{d.user_id}'" if d.user_id is not None else 'NULL',
+    f"'{d.medicine_id}'" if d.medicine_id is not None else 'NULL',
+    f"'{d.patient_id}'" if d.patient_id is not None else 'NULL',
+
+    int(id)
+  )
+
+  cursor.execute(query)
+  mysql.connection.commit()
+  cursor.close()
+
+  return jsonify({"message":"ok"}), 200
+
+@app.route('/delivery/<int:id>', methods=["DELETE"])
+@cross_origin(origin="*")
+def deleteDelivery(id):
+  cursor = mysql.connection.cursor()
+  query = '''
+    DELETE FROM medicine 
+    WHERE id = %d
+  ''' % (int(id))
+  cursor.execute(query)
+  mysql.connection.commit()
+  cursor.close()
+
+  return jsonify({'message': 'ok'}), 200
 
 
 '''- - - - - - - - - AUTH ENDPOINTS - - - - - - - - - '''
