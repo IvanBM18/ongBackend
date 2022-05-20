@@ -1,7 +1,7 @@
 import imp
 import json
 import os
-from datetime import datetime
+from datetime import date, datetime
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
@@ -16,6 +16,7 @@ from app.models.action_type import ActionType
 from app.models.delivery import Delivery
 from app.models.medicine import Medicine
 from app.models.patient import Patient
+from app.models.program import Program
 from app.models.user import User
 
 load_dotenv()
@@ -387,6 +388,7 @@ def createDelivery():
   userId = get_jwt_identity()
   addAction(action=ActionType.DELIVERY_ADD, dataId=deliveryId, userId=userId)
 
+  cursor.execute('UPDATE medicine SET stock = stock - %d WHERE id = %d' % (p.stock, p.medicine_id))
   mysql.connection.commit()
   cursor.close()
   return jsonify({'message': 'ok'}), 200
@@ -451,6 +453,115 @@ def deleteDelivery(id):
   addAction(userId=userId, action=ActionType.USER_LOGIN)
 
   return jsonify({'message': 'ok'}), 200
+
+
+'''- - - - - - - - - Programs ENDPOINTS - - - - - - - - - '''
+@app.route('/program', methods=["GET"])
+@cross_origin(origin="*")
+def getPrograms():
+    cursor = mysql.connection.cursor()
+
+    cursor.execute('''
+      SELECT JSON_OBJECT(
+        'id', id, 
+        'name', name,
+        'created_at', created_at,
+        'updated_at', updated_at
+      ) FROM program 
+      '''
+      )
+    queryResult = cursor.fetchall()
+    programs = []
+    for row in queryResult:
+      program = json.loads(row[0])
+      programs.append(program)
+
+    # Props
+    cursor.execute('''SELECT count(*) FROM program''')
+    queryResult = cursor.fetchone()
+    total = queryResult[0]
+
+    cursor.close()
+
+    res = {
+      'programs': programs,
+      'total': total,
+    }
+
+    return jsonify(res), 200
+
+@app.route('/program', methods=["POST"])
+@jwt_required()
+@cross_origin(origin="*")
+def createProgram():
+  data = request.get_json()
+  p = Program.from_json(data)
+
+  cursor = mysql.connection.cursor()
+  query = '''
+    INSERT INTO program (name)
+    VALUES (%s)
+  ''' % (
+    f"'{p.name}'" if p.name is not None else 'NULL'
+  )
+  print(query)
+  cursor.execute(query)
+
+  cursor.execute("SELECT LAST_INSERT_ID()")
+  programId = cursor.fetchone()[0]
+  userId = get_jwt_identity()
+  addAction(action=ActionType.PROGRAM_ADD , dataId=programId, userId=userId)
+
+  mysql.connection.commit()
+  cursor.close()
+  return jsonify({'message': 'ok'}), 200
+
+@app.route('/program/<int:id>', methods=["PUT"])
+@jwt_required()
+@cross_origin(origin="*")
+def updateProgram(id):
+  data = request.get_json()
+  p = Program.from_json(data)
+
+  cursor = mysql.connection.cursor()
+  query = '''
+    UPDATE program
+    SET name = COALESCE(%s, name)
+    WHERE id = %d
+  ''' % (
+    f"'{p.name}'" if p.name is not None else 'NULL',
+    int(id)
+  )
+  cursor.execute(query)
+
+  userId = get_jwt_identity()
+  addAction(action=ActionType.PROGRAM_UPDATE , dataId=id, userId=userId)
+  
+  mysql.connection.commit()
+  cursor.close()
+  return jsonify({'message': 'ok'}), 200
+
+@app.route('/program/<int:id>', methods=["DELETE"])
+@jwt_required()
+@cross_origin(origin="*")
+def deleteProgram(id):
+  cursor = mysql.connection.cursor()
+  userId = get_jwt_identity()
+  query = '''
+    DELETE FROM program 
+    WHERE id = %d
+  ''' % (int(id))
+  cursor.execute(query)
+
+  userId = get_jwt_identity()
+  addAction(action=ActionType.PROGRAM_DELETE, dataId=id, userId=userId)
+
+  mysql.connection.commit()
+  cursor.close()
+
+  return jsonify({'message': 'ok'}), 200
+
+
 
 '''- - - - - - - - - User/Accounts ENDPOINTS - - - - - - - - - '''
 @app.route('/users', methods=["GET"])
@@ -518,9 +629,11 @@ def createUser():
     f"'{u.image}'" if u.image is not None else 'NULL' ,
   )
   cursor.execute(query)
-  
+
+  cursor.execute("SELECT LAST_INSERT_ID()")
+  indexId = cursor.fetchone()[0]
   userId = get_jwt_identity()
-  addAction(action=ActionType.USER_ADD, userId=userId)
+  addAction(action=ActionType.USER_ADD,dataId=indexId, userId=userId)
 
   mysql.connection.commit()
   cursor.close()
@@ -554,8 +667,7 @@ def updateUser(id):
   )
   cursor.execute(query)
   
-  userId = get_jwt_identity()
-  addAction(action=ActionType.USER_UPDATE, userId=userId)
+  
 
   mysql.connection.commit()
   cursor.close()
@@ -581,6 +693,7 @@ def deleteUser(id):
   cursor.close()
 
   return jsonify({'message': 'ok'}), 200
+
 
 
 '''- - - - - - - - - AUTH ENDPOINTS - - - - - - - - - '''
@@ -625,6 +738,10 @@ def authLogout():
     addAction(userId=userId, action=ActionType.USER_LOGOUT)
     return jsonify({"msg": "Token revocado."}), 200
 
+
+
+
+'''------------------ STATS ENDPOINT ------------------'''
 @app.route('/stats', methods=['GET'])
 @cross_origin()
 def getStats():
@@ -635,36 +752,52 @@ def getStats():
     cursor.execute('SELECT COUNT(*) FROM patient')
     totalPatients = cursor.fetchone()[0]
 
+    cursor.execute('SELECT COUNT(*) FROM medicine')
+    totalMedicines = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM delivery')
+    totalDeliveries = cursor.fetchone()[0]
+
+
     cursor.execute('SELECT COUNT(*) FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (ActionType.PATIENT_ADD.value, currentMonth))
     patientsMonth = cursor.fetchone()[0]
+    cursor.execute('SELECT COUNT(*) FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (ActionType.PATIENT_DELETE.value, currentMonth))
+    deletedPatientsMonth = cursor.fetchone()[0]
+  
+    patientStats = getStatsByAction(ActionType.PATIENT_ADD)
 
-    cursor.execute('SELECT COUNT(*) FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (ActionType.MEDICINE_ADD.value, currentMonth))
-    medicinesMonth = cursor.fetchone()[0]
 
     cursor.execute('SELECT COUNT(*) FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (ActionType.DELIVERY_ADD.value, currentMonth))
-    deliveriesMonth = cursor.fetchone()[0]
-    
-    medicinesStats = {}
-    cursor.execute('SELECT createdAt FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (ActionType.MEDICINE_ADD.value, currentMonth))
-    medicines = cursor.fetchall()
-    for _ in medicines:
-      medicinesStats[_] = medicinesStats.get(_, 0) + 1
-    medStats = []
-    for key, value in medicinesStats.items():
-      medicinesStats.append({
-        'count': value,
-        'date': key
-      })
-   
+    countDeliveriesMonth = cursor.fetchone()[0]
+    cursor.execute('SELECT COUNT(*) FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (ActionType.DELIVERY_DELETE.value, currentMonth))
+    deletedDeliveriesMonth = cursor.fetchone()[0]
+
+    deliveriesStats = getStatsByAction(ActionType.DELIVERY_ADD)
+
+
+    cursor.execute('SELECT COUNT(*) FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (ActionType.MEDICINE_ADD.value, currentMonth))
+    countDeliveriesMonth = cursor.fetchone()[0]
+    cursor.execute('SELECT COUNT(*) FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (ActionType.MEDICINE_DELETE.value, currentMonth))
+    deletedMedicinesMonth = cursor.fetchone()[0]
+
+    medicinesStats = getStatsByAction(ActionType.MEDICINE_ADD)
 
     return jsonify(
       total_patients=totalPatients,
+      total_medicines=totalMedicines,
+      total_deliveries=totalDeliveries,
       month={
-        'patients': patientsMonth,
-        'deliveries': deliveriesMonth,
+        'patients': {
+          'total':(patientsMonth-deletedPatientsMonth),
+          'statistics':patientStats
+        },
+        'deliveries': {
+          'total': (countDeliveriesMonth-deletedDeliveriesMonth),
+          'statistics': deliveriesStats
+        },
         'medicines': {
-          'total': medicinesMonth,
-          'statistics': medStats
+          'total': (countDeliveriesMonth-deletedMedicinesMonth),
+          'statistics': medicinesStats
         },
       }), 200
 
@@ -707,6 +840,12 @@ def addAction(userId:int, action: ActionType, dataId:int = None):
     elif action == ActionType.DELIVERY_DELETE:
       text = f"El usuario [{userId}] ha eliminado una entrega"
 
+    elif action == ActionType.PROGRAM_ADD:
+      text = f"El usuario [{userId}] ha agregado un nuevo programa"
+    elif action == ActionType.PROGRAM_UPDATE:
+      text = f"El usuario [{userId}] ha actualizado la información de un program"
+    elif action == ActionType.DELIVERY_DELETE:
+      text = f"El usuario [{userId}] ha eliminado una entrega"
     query = '''
       INSERT INTO action (type_id, type_name, text, user_id, data_id)
       VALUES (%d, '%s', '%s', %s, %d)
@@ -715,3 +854,20 @@ def addAction(userId:int, action: ActionType, dataId:int = None):
     cursor.execute(query)
     mysql.connection.commit()
     cursor.close()
+
+
+def getStatsByAction(action: ActionType):
+  cursor = mysql.connection.cursor()
+  cursor.execute('SELECT createdAt FROM action WHERE type_id = %s', (action.value,))
+  actions = cursor.fetchall()
+  stats = {}
+  for _ in actions:
+    d : datetime.datetime = _[0]
+    dS = d.strftime('%d-%m-%Y')
+    stats[dS] = stats.get(dS, 0) + 1
+  stats = [{
+    'count': value,
+    'date': key
+  } for key, value in stats.items()]
+  stats.sort(key=lambda x: x['date'])
+  return stats

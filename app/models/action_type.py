@@ -1,6 +1,6 @@
 from enum import Enum
 
-# IMPROTANT: Keep updated with the database
+# IMPORTANT: Keep updated with the database
 
 class ActionType(Enum):
   # User Actions
@@ -24,4 +24,9 @@ class ActionType(Enum):
   DELIVERY_ADD = 12
   DELIVERY_UPDATE = 13
   DELIVERY_DELETE = 14
+  
+  # Delivery Actions
+  PROGRAM_ADD = 15
+  PROGRAM_UPDATE = 16
+  PROGRAM_DELETE = 17
   
