@@ -547,11 +547,19 @@ def updateProgram(id):
 def deleteProgram(id):
   cursor = mysql.connection.cursor()
   userId = get_jwt_identity()
+  
+  ""
+  query = '''
+    UPDATE patient SET program=-1 WHERE program=%d
+  ''' % (int(id))
+  cursor.execute(query)
+  
   query = '''
     DELETE FROM program 
     WHERE id = %d
   ''' % (int(id))
   cursor.execute(query)
+  
 
   userId = get_jwt_identity()
   addAction(action=ActionType.PROGRAM_DELETE, dataId=id, userId=userId)
@@ -563,7 +571,7 @@ def deleteProgram(id):
 
 
 
-'''- - - - - - - - - User/Accounts ENDPOINTS - - - - - - - - - '''
+'''- - - - - - - - - USER ENDPOINTS - - - - - - - - - '''
 @app.route('/users', methods=["GET"])
 @cross_origin(origin="*")
 def getUsers():
