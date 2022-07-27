@@ -2,6 +2,7 @@ import imp
 import json
 import os
 from datetime import date, datetime
+from unicodedata import name
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
@@ -51,9 +52,11 @@ mysql = MySQL(app)
 def getPatients():
     limitFrom = int(request.args.get('from', 0))
     limitTo = int(request.args.get('to', PAGE_SIZE))
+    search = request.args.get('search')
 
     cursor = mysql.connection.cursor()
 
+    searchQuery = f"WHERE name LIKE '%{search}%'"
     cursor.execute('''
       SELECT JSON_OBJECT(
         'id', id, 
@@ -64,8 +67,9 @@ def getPatients():
         'observations', observations,
         'program', program  
       ) FROM patient
+        %s
         LIMIT %d,%d
-      '''% (limitFrom, limitTo)
+      '''% (searchQuery if search is not None else "", limitFrom, limitTo)
       )
     queryResult = cursor.fetchall()
     patients = []
@@ -184,9 +188,11 @@ def createPatient():
 def getMedicines():
     limitFrom = int(request.args.get('from', 0))
     limitTo = int(request.args.get('to', PAGE_SIZE))
+    search = request.args.get('search')
 
     cursor = mysql.connection.cursor()
 
+    searchQuery = f"WHERE concept LIKE '%{search}%'"
     cursor.execute('''
       SELECT JSON_OBJECT(
         'id', id, 
@@ -199,8 +205,13 @@ def getMedicines():
         'user_id', user_id,  
         'expiration_date', expiration_date  
       ) FROM medicine
+        %s
         LIMIT %d,%d
-      '''% (limitFrom, limitTo)
+      '''% (
+        searchQuery if search is not None else "",
+        limitFrom,
+        limitTo
+        )
       )
     queryResult = cursor.fetchall()
     medicines = []
@@ -459,17 +470,29 @@ def deleteDelivery(id):
 @app.route('/program', methods=["GET"])
 @cross_origin(origin="*")
 def getPrograms():
+    limitFrom = int(request.args.get('from', 0))
+    limitTo = int(request.args.get('to', PAGE_SIZE))
+    search = request.args.get('search')
+
     cursor = mysql.connection.cursor()
 
-    cursor.execute('''
+    searchQuery = f"WHERE name LIKE '%{search}%'"
+    query = '''
       SELECT JSON_OBJECT(
         'id', id, 
         'name', name,
         'created_at', created_at,
         'updated_at', updated_at
       ) FROM program 
-      '''
-      )
+        %s
+        LIMIT %d, %d
+      '''% (
+        searchQuery if search is not None else "",
+        limitFrom,
+        limitTo
+        )
+    cursor.execute(query)
+
     queryResult = cursor.fetchall()
     programs = []
     for row in queryResult:
@@ -486,6 +509,10 @@ def getPrograms():
     res = {
       'programs': programs,
       'total': total,
+      'paging': {
+        'from' : limitFrom,
+        'to': limitTo
+      }
     }
 
     return jsonify(res), 200
