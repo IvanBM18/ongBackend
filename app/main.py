@@ -798,40 +798,49 @@ def getStats():
     patientsMonth = cursor.fetchone()[0]
     cursor.execute('SELECT COUNT(*) FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (ActionType.PATIENT_DELETE.value, currentMonth))
     deletedPatientsMonth = cursor.fetchone()[0]
-  
-    patientStats = getStatsByAction(ActionType.PATIENT_ADD)
 
+    patientStats = {
+      'positive' : getStatsByActionMonth(ActionType.PATIENT_ADD),
+      'negative' : getStatsByActionMonth(ActionType.PATIENT_DELETE),
+    }
 
     cursor.execute('SELECT COUNT(*) FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (ActionType.DELIVERY_ADD.value, currentMonth))
     countDeliveriesMonth = cursor.fetchone()[0]
     cursor.execute('SELECT COUNT(*) FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (ActionType.DELIVERY_DELETE.value, currentMonth))
     deletedDeliveriesMonth = cursor.fetchone()[0]
 
-    deliveriesStats = getStatsByAction(ActionType.DELIVERY_ADD)
-
+    deliveriesStats = {
+      'positive' : getStatsByActionMonth(ActionType.DELIVERY_ADD),
+      'negative' : getStatsByActionMonth(ActionType.DELIVERY_DELETE),
+    }
 
     cursor.execute('SELECT COUNT(*) FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (ActionType.MEDICINE_ADD.value, currentMonth))
-    countDeliveriesMonth = cursor.fetchone()[0]
+    countMedicinesMonth = cursor.fetchone()[0]
     cursor.execute('SELECT COUNT(*) FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (ActionType.MEDICINE_DELETE.value, currentMonth))
     deletedMedicinesMonth = cursor.fetchone()[0]
 
-    medicinesStats = getStatsByAction(ActionType.MEDICINE_ADD)
+    medicinesStats = {
+      'positive' : getStatsByActionMonth(ActionType.MEDICINE_ADD),
+      'negative' : getStatsByActionMonth(ActionType.MEDICINE_DELETE),
+    }
 
     return jsonify(
-      total_patients=totalPatients,
-      total_medicines=totalMedicines,
-      total_deliveries=totalDeliveries,
+      total={
+        'patients': totalPatients,
+        'medicines': totalMedicines,
+        'deliveries': totalDeliveries
+      },
       month={
         'patients': {
           'total':(patientsMonth-deletedPatientsMonth),
-          'statistics':patientStats
+          'statistics': patientStats
         },
         'deliveries': {
           'total': (countDeliveriesMonth-deletedDeliveriesMonth),
           'statistics': deliveriesStats
         },
         'medicines': {
-          'total': (countDeliveriesMonth-deletedMedicinesMonth),
+          'total': (countMedicinesMonth-deletedMedicinesMonth),
           'statistics': medicinesStats
         },
       }), 200
@@ -891,9 +900,10 @@ def addAction(userId:int, action: ActionType, dataId:int = None):
     cursor.close()
 
 
-def getStatsByAction(action: ActionType):
+def getStatsByActionMonth(action: ActionType):
   cursor = mysql.connection.cursor()
-  cursor.execute('SELECT createdAt FROM action WHERE type_id = %s', (action.value,))
+  currentMonth = datetime.now().month
+  cursor.execute('SELECT createdAt FROM action WHERE type_id = %s AND MONTH(createdAt) = %s', (action.value, currentMonth))
   actions = cursor.fetchall()
   stats = {}
   for _ in actions:
